@@ -1,0 +1,13 @@
+{
+    "name": "DOM Reader",
+    "version": "1.0",
+    "manifest_version": 3,
+    "description": "Reads the content of a page.",
+    "permissions": [
+      "scripting",
+      "activeTab"
+    ],
+    "action": {
+      "default_popup": "index.html"
+    }
+  }
