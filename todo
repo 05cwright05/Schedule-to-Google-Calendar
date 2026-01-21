@@ -1,0 +1,25 @@
+Figure out where classes are stored on web page
+Parse those jawns into a clean data structure
+Write a function to write those to a iso
+Have user authenticate with google
+Write those jawns from datastructure to google
+Have extension popup when it reaches the page with our specific target url
+
+Update UI
+UI Flow:
+Popup on page visit (waittt they have to select the current term so i might need some kind of check for this)
+
+Hit generate schedule
+
+Show some kind of preview
+
+Confirm
+Cancel
+
+Ask if they would like to write to google apple or microsoft (stacked auth buttons) or download as iso
+
+
+
+
+Add support for microsoft
+Add support for Apple
