@@ -8,6 +8,10 @@ function getScheduleData(pageContent) {
     const doc = parser.parseFromString(pageContent, "text/html");
     
     // Place holder jawn while i figure out how the data is actually stored
+    doc.querySelectorAll("table.unitime-WebTable, .unitime-WebTable").forEach(table => {
+        const rows = Array.from(table.querySelectorAll("tr"));
+        print(rows);
+    });
     scheduleData = [];
     return scheduleData;
 }
