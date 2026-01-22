@@ -39,6 +39,7 @@ function showActionsPage() {
 // Calendar action button handlers
 document.getElementById('add-google').addEventListener('click', () => {
     addToGoogleCalendar(scheduleData);
+
 });
 
 document.getElementById('add-microsoft').addEventListener('click', () => {
@@ -56,16 +57,21 @@ document.getElementById('download-ics').addEventListener('click', () => {
 // Skeleton functions for calendar integrations
 function addToGoogleCalendar(scheduleData) {
     // TODO: Implement Google Calendar integration
+    console.log("adding to gc")
+    console.log(scheduleData)
 }
 
 function addToMicrosoftCalendar(scheduleData) {
     // TODO: Implement Microsoft Calendar integration
+    console.log("adding to msft")
 }
 
 function addToAppleCalendar(scheduleData) {
     // TODO: Implement Apple Calendar integration
+    console.log("adding to apple calendar")
 }
 
 function downloadAsICS(scheduleData) {
     // TODO: Implement ICS file download
+    console.log("downloading as ics")
 }

@@ -1,6 +1,7 @@
 {
     "name": "DOM Reader",
     "version": "1.0",
+    "key": "AutoCalendarKey983023487324jkafsdjka",
     "manifest_version": 3,
     "description": "Reads the content of a page.",
     "permissions": [
@@ -10,4 +11,5 @@
     "action": {
       "default_popup": "index.html"
     }
+
   }
