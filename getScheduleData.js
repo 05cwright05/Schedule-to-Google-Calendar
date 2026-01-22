@@ -10,6 +10,7 @@ function printRow(row) {
  * @returns {Array} Array of schedule objects with class info
  */
 function getScheduleData(pageContent) {
+    console.log("VERSION 2");
     const parser = new DOMParser();
     const doc = parser.parseFromString(pageContent, "text/html");
     
