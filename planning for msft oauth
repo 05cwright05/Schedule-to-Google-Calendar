@@ -1,0 +1,27 @@
+What the Microsoft version looks like (no server)
+Azure App Registration (Entra ID)
+Treat the extension as a public client (no secret).
+Add redirect URI: https://<YOUR_EXTENSION_ID>.chromiumapp.org/ (this is what chrome.identity.launchWebAuthFlow() uses).
+Configure Microsoft Graph delegated permissions like:
+Calendars.ReadWrite
+offline_access (if you want refresh tokens)
+openid, profile (optional but common)
+Extension code
+Your button triggers chrome.identity.launchWebAuthFlow() to open the Microsoft authorize endpoint.
+Use PKCE and request response_type=code.
+On redirect back to chromiumapp.org, parse the code.
+POST to Microsoft’s token endpoint to exchange code (+ code_verifier) for an access token (and often a refresh token if you asked for offline access and policy allows it).
+Call Microsoft Graph with Authorization: Bearer <access_token>.
+This works completely client-side. The tradeoff is you’ll be responsible for token storage + refresh logic.
+When you would need a server
+You only really need to host a server if you want any of these:
+Confidential client flow (client secret / certificate kept off the user’s machine)
+Centralized token storage / revocation / auditing
+Multi-device sync of tokens (rather than per-browser storage)
+Backend doing the Graph calls on behalf of the extension (hiding Graph complexity from the client)
+Practical note for “simple button”
+You can absolutely have “press button → login → token” without a server, but it won’t be a single API call like Google—Microsoft will be more like:
+start auth (launchWebAuthFlow)
+exchange code for token
+cache token / refresh token
+If you tell me whether you want Microsoft personal accounts (outlook.com), work/school (Office 365), or both, I can point you to the exact authorize/token endpoints and the best “account type” setting in the Azure app registration.
