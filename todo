@@ -23,3 +23,13 @@ Ask if they would like to write to google apple or microsoft (stacked auth butto
 
 Add support for microsoft
 Add support for Apple
+
+
+Could strengthen validation to ensure a correct row very unlikely to accidentally match a professor name, because you’re only checking the Type column (getText(3)), which in this table is a short schedule-type code (Lec/Lab/Pso/…); instructor names live in a different column and won’t be read into type.
+That said, a long allowlist is fine, but the safer approach is to also validate another “course-row-ish” signal so you don’t rely on type alone, e.g.:
+CRN-SectionId format looks like 13293-LE1 (starts with digits + -)
+Days looks like MWF, TR, R, etc.
+If you want, I can tighten the filter to something like:
+validTypes.includes(type) AND
+/^\d{4,6}-/.test(getText(4)) (or similar)
+Also minor: your list has "Dis" twice—doesn’t hurt, just redundant.

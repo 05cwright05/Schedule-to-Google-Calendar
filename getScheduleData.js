@@ -25,7 +25,8 @@ function getScheduleData(pageContent) {
             const getText = (index) => cells[index]?.textContent.trim() || "";
             
             // Valid course types we expect
-            const validTypes = ["Lec", "Lab", "Pso", "Dis", "Rec"];
+            // quoted from https://www.purdue.edu/registrar/faculty/Courses%20and%20Curriculum/schedule-type-classifications.html?utm_source=chatgpt.com
+            const validTypes = ["Lec", "Lab", "Pso", "Rec", "Prs", "Lbp", "Cln", "Sd", "Ex", "Res", "Ind", "Dis"];
             
             // Check if column 1 (subject) has content - indicates main course row
             const subject = getText(1);
