@@ -27,10 +27,17 @@ function getScheduleData(pageContent) {
             // Valid course types we expect
             // quoted from https://www.purdue.edu/registrar/faculty/Courses%20and%20Curriculum/schedule-type-classifications.html?utm_source=chatgpt.com
             const validTypes = ["Lec", "Lab", "Pso", "Rec", "Prs", "Lbp", "Cln", "Sd", "Ex", "Res", "Ind", "Dis"];
+            const regexCRN = /^\d{4,6}-/;
             
             // Check if column 1 (subject) has content - indicates main course row
             const subject = getText(1);
             const type = getText(3);
+            const crn = getText(4);
+            
+            //probs better to check the crn - not sure tho cuz its not posted on purdue what this officailly could look like 
+            // if (!regexCRN.test(crn)) {
+            //     return;
+            // }
             
             // Skip rows without a valid course type
             if (!validTypes.includes(type)) {
