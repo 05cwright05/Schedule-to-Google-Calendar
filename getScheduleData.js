@@ -1,3 +1,9 @@
+function printRow(row) {
+    const cells = Array.from(row.querySelectorAll("td"));
+    const cellContents = cells.map(cell => cell.textContent.trim()).filter(text => text.length > 0);
+    console.log(cellContents.join(" | "));
+}
+
 /**
  * Parses the page HTML and extracts schedule data from table elements.
  * @param {string} pageContent - The full HTML of the page as a string
@@ -10,7 +16,7 @@ function getScheduleData(pageContent) {
     // Place holder jawn while i figure out how the data is actually stored
     doc.querySelectorAll("table.unitime-WebTable, .unitime-WebTable").forEach(table => {
         const rows = Array.from(table.querySelectorAll("tr"));
-        print(rows);
+        rows.forEach(printRow);
     });
     scheduleData = [];
     return scheduleData;
