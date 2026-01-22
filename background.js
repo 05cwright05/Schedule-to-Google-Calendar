@@ -19,3 +19,8 @@ chrome.browserAction.onClicked.addListener(function (tab) {
         chrome.tabs.sendMessage(tab.id, {text: 'report_back'}, doStuffWithDom);
     }
 });
+
+function addGoogleCalendar(scheduleData) {
+    console.log("adding to google jawn v4")
+    console.log(scheduleData)
+}

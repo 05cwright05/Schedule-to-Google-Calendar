@@ -6,10 +6,16 @@
     "description": "Reads the content of a page.",
     "permissions": [
       "scripting",
-      "activeTab"
+      "activeTab",
+      "identity"
     ],
+    "oauth2": {
+      "client_id": "601689470409-27g1eot90c7pljkimmio63hss5okg9lo.apps.googleusercontent.com",
+      "scopes": [
+        "https://www.googleapis.com/auth/calendar"
+      ]
+    },
     "action": {
       "default_popup": "index.html"
     }
-
   }
