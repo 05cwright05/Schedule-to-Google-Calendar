@@ -311,13 +311,13 @@ function createICSFile(scheduleData) {
             icsContent += `DTSTART;TZID=${timeZone}:${formatICSDateTime(firstOccurrence, startTime)}\r\n`;
             icsContent += `DTEND;TZID=${timeZone}:${formatICSDateTime(firstOccurrence, endTime)}\r\n`;
             icsContent += `RRULE:FREQ=WEEKLY;BYDAY=${byDay};UNTIL=${untilDate}\r\n`;
-            icsContent += `SUMMARY:${escapeICSText(classItem.subject + ' ' + classItem.course + ' ' + classItem.type)}\r\n`;
+            icsContent += `SUMMARY:${escapeICSText(classItem.name)}\r\n`;
             icsContent += `LOCATION:${escapeICSText(classItem.room)}\r\n`;
             icsContent += `DESCRIPTION:CRN: ${escapeICSText(classItem.crn)}\r\n`;
             icsContent += 'STATUS:CONFIRMED\r\n';
             icsContent += 'END:VEVENT\r\n';
             
-            console.log("Added event to ICS:", `${classItem.subject} ${classItem.course}`);
+            console.log("Added event to ICS:", classItem.name);
         } catch (error) {
             console.error("Error processing class for ICS:", classItem, error);
         }
@@ -383,7 +383,7 @@ async function addGoogleCalendar(scheduleData, token) {
                 console.log("Event already exists, skipping:", existingEvent.summary);
                 results.push({ 
                     success: true, 
-                    class: `${classItem.subject} ${classItem.course} ${classItem.type}`, 
+                    class: classItem.name, 
                     eventId: eventId,
                     skipped: true,
                     message: "Event already exists"
@@ -402,7 +402,7 @@ async function addGoogleCalendar(scheduleData, token) {
             // Create the event object with deterministic ID
             const event = {
                 id: eventId,
-                summary: `${classItem.subject} ${classItem.course} ${classItem.type}`,
+                summary: classItem.name,
                 location: classItem.room,
                 start: {
                     dateTime: createDateTime(firstOccurrence, startTime),
@@ -435,7 +435,7 @@ async function addGoogleCalendar(scheduleData, token) {
                 console.error("Failed to create event:", errorData);
                 results.push({ 
                     success: false, 
-                    class: `${classItem.subject} ${classItem.course} ${classItem.type}`, 
+                    class: classItem.name, 
                     error: errorData 
                 });
             } else {
@@ -452,7 +452,7 @@ async function addGoogleCalendar(scheduleData, token) {
             console.error("Error creating event for class:", classItem, error);
             results.push({ 
                 success: false, 
-                class: `${classItem.subject} ${classItem.course}`, 
+                class: classItem.name, 
                 error: error.message 
             });
         }

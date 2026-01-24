@@ -53,43 +53,26 @@ function getScheduleData(pageContent) {
                 // Update current parent course for inheritance
                 currentSubject = subject;
                 currentCourse = getText(2);
-                
-                scheduleData.push({
-                    subject: currentSubject,
-                    course: currentCourse,
-                    type: type,
-                    crn: getText(4),
-                    availability: getText(5),
-                    days: getText(6),
-                    startTime: getText(7),
-                    endTime: getText(8),
-                    dateRange: getText(9),
-                    room: getText(10),
-                    instructor: getText(11),
-                    requires: getText(12),
-                    credits: getText(14),
-                    gradeMode: getText(15)
-                });
-            } 
-            // Sub-section row: no subject (Lab, Pso, etc.) - inherit from parent
-            else {
-                scheduleData.push({
-                    subject: currentSubject,
-                    course: currentCourse,
-                    type: type,
-                    crn: getText(4),
-                    availability: getText(5),
-                    days: getText(6),
-                    startTime: getText(7),
-                    endTime: getText(8),
-                    dateRange: getText(9),
-                    room: getText(10),
-                    instructor: getText(11),
-                    requires: getText(12),
-                    credits: getText(14),
-                    gradeMode: getText(15)
-                });
             }
+            
+            // Create schedule entry (for both main and sub-section rows)
+            scheduleData.push({
+                subject: currentSubject,
+                course: currentCourse,
+                type: type,
+                name: currentSubject + " " + currentCourse + " " + type,
+                crn: getText(4),
+                availability: getText(5),
+                days: getText(6),
+                startTime: getText(7),
+                endTime: getText(8),
+                dateRange: getText(9),
+                room: getText(10),
+                instructor: getText(11),
+                requires: getText(12),
+                credits: getText(14),
+                gradeMode: getText(15)
+            });
         });
     });
     
