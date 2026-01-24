@@ -58,7 +58,8 @@ function populateEditPage() {
                 </div>
                 <div class="event-field">
                     <label>Time</label>
-                    <input type="text" data-field="time" value="${escapeHtml((event.startTime || '') + (event.endTime ? ' - ' + event.endTime : ''))}">
+                    <input type="text" data-field="time" value="${escapeHtml((event.startTime || '') + (event.endTime ? ' - ' + event.endTime : ''))}" class="time-input">
+                    <span class="error-message" style="display: none;">Format must be: 9:20a - 10:30a or 4:30p - 5:20p</span>
                 </div>
             </div>
         `;
@@ -69,6 +70,10 @@ function populateEditPage() {
     // Add event listeners for input changes
     eventsList.querySelectorAll('input').forEach(input => {
         input.addEventListener('change', handleInputChange);
+        // Add real-time validation for time inputs
+        if (input.dataset.field === 'time') {
+            input.addEventListener('input', validateTimeInput);
+        }
     });
 
     // Add event listeners for delete buttons
@@ -81,6 +86,32 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function validateTimeInput(e) {
+    const input = e.target;
+    const value = input.value.trim();
+    const errorMessage = input.parentElement.querySelector('.error-message');
+    
+    // Regex pattern to match time format: "9:20a - 10:30a" or "4:30p - 5:20p"
+    // Allows for optional leading zeros and spaces around the dash
+    const timePattern = /^\d{1,2}:\d{2}[ap]\s*-\s*\d{1,2}:\d{2}[ap]$/i;
+    
+    if (value === '' || timePattern.test(value)) {
+        // Valid format or empty
+        input.style.border = '';
+        input.style.outline = '';
+        if (errorMessage) {
+            errorMessage.style.display = 'none';
+        }
+    } else {
+        // Invalid format
+        input.style.border = '2px solid #dc3545';
+        input.style.outline = 'none';
+        if (errorMessage) {
+            errorMessage.style.display = 'block';
+        }
+    }
 }
 
 function handleInputChange(e) {

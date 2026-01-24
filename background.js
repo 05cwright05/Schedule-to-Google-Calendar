@@ -325,27 +325,31 @@ function createICSFile(scheduleData) {
     
     // Close the calendar
     icsContent += 'END:VCALENDAR\r\n';
+    chrome.runtime.sendMessage({
+        type: "DOWNLOAD_ICS",
+        icsContent
+      });
     
-    // Create a blob and trigger download
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+    // // Create a blob and trigger download
+    // const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    // const url = URL.createObjectURL(blob);
     
-    // Create a download link and click it
-    chrome.downloads.download({
-        url: url,
-        filename: 'purdue_schedule.ics',
-        saveAs: true
-    }, (downloadId) => {
-        if (chrome.runtime.lastError) {
-            console.error("Download failed:", chrome.runtime.lastError);
-        } else {
-            console.log("ICS file download started:", downloadId);
-        }
-        // Clean up the URL after a short delay
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-    });
+    // // Create a download link and click it
+    // chrome.downloads.download({
+    //     url: url,
+    //     filename: 'purdue_schedule.ics',
+    //     saveAs: true
+    // }, (downloadId) => {
+    //     if (chrome.runtime.lastError) {
+    //         console.error("Download failed:", chrome.runtime.lastError);
+    //     } else {
+    //         console.log("ICS file download started:", downloadId);
+    //     }
+    //     // Clean up the URL after a short delay
+    //     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    // });
     
-    console.log("ICS file created and download triggered");
+    // console.log("ICS file created and download triggered");
 }
 
 async function addGoogleCalendar(scheduleData, token) {
