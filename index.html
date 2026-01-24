@@ -25,14 +25,6 @@
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
-      .page-initial {
-        transform: translateX(0);
-      }
-
-      .page-initial.slide-out {
-        transform: translateX(-100%);
-      }
-
       /* Edit page styles */
       .page-edit {
         transform: translateX(100%);
@@ -173,11 +165,60 @@
         transform: translateX(0);
       }
 
-      .initial-container {
+      /* Initial page styles */
+      .page-initial {
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        transform: translateX(0);
+      }
+
+      .page-initial.slide-out {
+        transform: translateX(-100%);
+      }
+
+      .initial-header {
+        padding: 32px 24px 0;
+        text-align: center;
+      }
+
+      .initial-header h1 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #111;
+        letter-spacing: -0.3px;
+      }
+
+      .initial-header p {
+        font-size: 13px;
+        color: #888;
+        margin-top: 6px;
+      }
+
+      .initial-content {
+        flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
+        padding: 24px;
+      }
+
+      .logo-container {
+        width: 160px;
+        height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .logo-container img {
+        width: 100%;
         height: 100%;
+        object-fit: contain;
+      }
+
+      .initial-footer {
+        padding: 24px 24px 32px;
       }
 
       button {
@@ -189,14 +230,17 @@
       }
 
       #read-content {
-        padding: 14px 28px;
+        width: 100%;
+        padding: 16px;
         background: #000;
         color: #fff;
         border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
       }
 
       #read-content:hover {
-        background: #333;
+        background: #222;
       }
 
       #read-content:active {
@@ -284,8 +328,17 @@
   </head>
   <body>
     <div class="page page-initial" id="page-initial">
-      <div class="initial-container">
-        <button id="read-content">Read content</button>
+      <div class="initial-header">
+        <h1>Schedule Generator</h1>
+        <p>Extract events from any webpage</p>
+      </div>
+      <div class="initial-content">
+        <div class="logo-container">
+          <img src="logo-removebg-preview.png" alt="Logo">
+        </div>
+      </div>
+      <div class="initial-footer">
+        <button id="read-content">Generate Schedule</button>
       </div>
     </div>
 
