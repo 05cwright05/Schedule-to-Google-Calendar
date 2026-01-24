@@ -208,6 +208,145 @@ async function checkEventExists(calendarId, eventId, token) {
         return null;
     }
 }
+/**
+ * Formats date for ICS file format (YYYYMMDD)
+ */
+function formatICSDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}${month}${day}`;
+}
+
+/**
+ * Formats datetime for ICS file format (YYYYMMDDTHHMMSS)
+ */
+function formatICSDateTime(date, time) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(time.hours).padStart(2, '0');
+    const minutes = String(time.minutes).padStart(2, '0');
+    return `${year}${month}${day}T${hours}${minutes}00`;
+}
+
+/**
+ * Escapes special characters for ICS file format
+ */
+function escapeICSText(text) {
+    if (!text) return '';
+    return text
+        .replace(/\\/g, '\\\\')
+        .replace(/;/g, '\\;')
+        .replace(/,/g, '\\,')
+        .replace(/\n/g, '\\n');
+}
+
+/**
+ * Creates an ICS file from schedule data and triggers download
+ */
+function createICSFile(scheduleData) {
+    console.log("Creating ICS file");
+    console.log(scheduleData);
+    
+    const timeZone = "America/Indiana/Indianapolis"; // Purdue timezone
+    
+    // Start building the ICS file
+    let icsContent = 'BEGIN:VCALENDAR\r\n';
+    icsContent += 'VERSION:2.0\r\n';
+    icsContent += 'PRODID:-//Purdue Schedule//EN\r\n';
+    icsContent += 'CALSCALE:GREGORIAN\r\n';
+    icsContent += 'METHOD:PUBLISH\r\n';
+    icsContent += `X-WR-TIMEZONE:${timeZone}\r\n`;
+    
+    // Add timezone component
+    icsContent += 'BEGIN:VTIMEZONE\r\n';
+    icsContent += `TZID:${timeZone}\r\n`;
+    icsContent += 'BEGIN:STANDARD\r\n';
+    icsContent += 'DTSTART:20231105T020000\r\n';
+    icsContent += 'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU\r\n';
+    icsContent += 'TZOFFSETFROM:-0400\r\n';
+    icsContent += 'TZOFFSETTO:-0500\r\n';
+    icsContent += 'END:STANDARD\r\n';
+    icsContent += 'BEGIN:DAYLIGHT\r\n';
+    icsContent += 'DTSTART:20240310T020000\r\n';
+    icsContent += 'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU\r\n';
+    icsContent += 'TZOFFSETFROM:-0500\r\n';
+    icsContent += 'TZOFFSETTO:-0400\r\n';
+    icsContent += 'END:DAYLIGHT\r\n';
+    icsContent += 'END:VTIMEZONE\r\n';
+    
+    // Process each class
+    for (const classItem of scheduleData) {
+        try {
+            // Parse the date range
+            const dateRange = parseDateRange(classItem.dateRange);
+            if (!dateRange) {
+                console.error("Failed to parse date range:", classItem.dateRange);
+                continue;
+            }
+            
+            // Parse start and end times
+            const startTime = parseTime(classItem.startTime);
+            const endTime = parseTime(classItem.endTime);
+            if (!startTime || !endTime) {
+                console.error("Failed to parse times:", classItem.startTime, classItem.endTime);
+                continue;
+            }
+            
+            // Find the first occurrence that matches the schedule days
+            const firstOccurrence = findFirstOccurrence(dateRange.startDate, classItem.days);
+            
+            // Build the RRULE for ICS format
+            const byDay = parseDaysToRRule(classItem.days);
+            const untilDate = formatICSDate(dateRange.endDate) + 'T235959';
+            
+            // Generate unique ID for the event
+            const eventId = generateEventId(classItem);
+            
+            // Add event to ICS content
+            icsContent += 'BEGIN:VEVENT\r\n';
+            icsContent += `UID:${eventId}@purdue-schedule\r\n`;
+            icsContent += `DTSTAMP:${formatICSDateTime(new Date(), { hours: 0, minutes: 0 })}\r\n`;
+            icsContent += `DTSTART;TZID=${timeZone}:${formatICSDateTime(firstOccurrence, startTime)}\r\n`;
+            icsContent += `DTEND;TZID=${timeZone}:${formatICSDateTime(firstOccurrence, endTime)}\r\n`;
+            icsContent += `RRULE:FREQ=WEEKLY;BYDAY=${byDay};UNTIL=${untilDate}\r\n`;
+            icsContent += `SUMMARY:${escapeICSText(classItem.subject + ' ' + classItem.course + ' ' + classItem.type)}\r\n`;
+            icsContent += `LOCATION:${escapeICSText(classItem.room)}\r\n`;
+            icsContent += `DESCRIPTION:CRN: ${escapeICSText(classItem.crn)}\r\n`;
+            icsContent += 'STATUS:CONFIRMED\r\n';
+            icsContent += 'END:VEVENT\r\n';
+            
+            console.log("Added event to ICS:", `${classItem.subject} ${classItem.course}`);
+        } catch (error) {
+            console.error("Error processing class for ICS:", classItem, error);
+        }
+    }
+    
+    // Close the calendar
+    icsContent += 'END:VCALENDAR\r\n';
+    
+    // Create a blob and trigger download
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create a download link and click it
+    chrome.downloads.download({
+        url: url,
+        filename: 'purdue_schedule.ics',
+        saveAs: true
+    }, (downloadId) => {
+        if (chrome.runtime.lastError) {
+            console.error("Download failed:", chrome.runtime.lastError);
+        } else {
+            console.log("ICS file download started:", downloadId);
+        }
+        // Clean up the URL after a short delay
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    
+    console.log("ICS file created and download triggered");
+}
 
 async function addGoogleCalendar(scheduleData, token) {
     console.log("Adding to Google Calendar v6 (with duplicate check)");

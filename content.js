@@ -51,7 +51,7 @@ document.getElementById('add-apple').addEventListener('click', () => {
 });
 
 document.getElementById('download-ics').addEventListener('click', () => {
-    downloadAsICS(scheduleData);
+    createICSFile(scheduleData);
 });
 
 
@@ -65,7 +65,3 @@ function addToAppleCalendar(scheduleData) {
     console.log("adding to apple calendar")
 }
 
-function downloadAsICS(scheduleData) {
-    // TODO: Implement ICS file download
-    console.log("downloading as ics")
-}
