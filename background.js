@@ -125,14 +125,98 @@ function findFirstOccurrence(startDate, days) {
     return startDate;
 }
 
+/**
+ * Generates a deterministic event ID from class attributes.
+ * Google Calendar event IDs must be 5-1024 chars, using only base32hex (a-v, 0-9).
+ * We convert the combined string to a simple hash-like encoding.
+ */
+function generateEventId(classItem) {
+    // Combine key attributes into a unique string
+    const uniqueStr = [
+        classItem.subject,
+        classItem.course,
+        classItem.type,
+        classItem.crn,
+        classItem.days,
+        classItem.startTime,
+        classItem.endTime,
+        classItem.dateRange,
+        classItem.room
+    ].join('|').toLowerCase();
+    
+    // Convert to base32hex-compatible characters (a-v, 0-9)
+    // Simple encoding: convert each char code to base32hex representation
+    let encoded = '';
+    for (let i = 0; i < uniqueStr.length; i++) {
+        const charCode = uniqueStr.charCodeAt(i);
+        // Convert to base 32 and map to valid chars (0-9 = 0-9, 10-31 = a-v)
+        const high = Math.floor(charCode / 32) % 32;
+        const low = charCode % 32;
+        encoded += toBase32Hex(high) + toBase32Hex(low);
+    }
+    
+    // Ensure minimum length of 5 and max of 1024
+    if (encoded.length < 5) {
+        encoded = encoded.padEnd(5, '0');
+    }
+    if (encoded.length > 1024) {
+        encoded = encoded.substring(0, 1024);
+    }
+    
+    return encoded;
+}
+
+/**
+ * Converts a number 0-31 to base32hex character (0-9, a-v)
+ */
+function toBase32Hex(num) {
+    if (num < 10) {
+        return String(num);
+    }
+    return String.fromCharCode('a'.charCodeAt(0) + (num - 10));
+}
+
+/**
+ * Checks if an event with the given ID already exists in the calendar.
+ * Returns the event if found, null if not found (404).
+ */
+async function checkEventExists(calendarId, eventId, token) {
+    try {
+        const response = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+        
+        if (response.status === 404) {
+            return null; // Event doesn't exist
+        }
+        
+        if (response.ok) {
+            return await response.json(); // Event exists
+        }
+        
+        // Other error - log it but treat as "doesn't exist" to allow creation attempt
+        console.warn("Unexpected response checking event:", response.status);
+        return null;
+    } catch (error) {
+        console.error("Error checking if event exists:", error);
+        return null;
+    }
+}
+
 async function addGoogleCalendar(scheduleData, token) {
-    console.log("Adding to Google Calendar v5");
+    console.log("Adding to Google Calendar v6 (with duplicate check)");
     console.log("Schedule data:", scheduleData);
     
     const calendarId = "primary";
     const timeZone = "America/Indiana/Indianapolis"; // Purdue timezone
     const results = [];
-    let prevClassItem = null;
+    
     for (const classItem of scheduleData) {
         try {
             // Parse the date range
@@ -150,6 +234,24 @@ async function addGoogleCalendar(scheduleData, token) {
                 continue;
             }
             
+            // Generate deterministic event ID from class attributes
+            const eventId = generateEventId(classItem);
+            console.log("Generated event ID:", eventId);
+            
+            // Check if event already exists
+            const existingEvent = await checkEventExists(calendarId, eventId, token);
+            if (existingEvent) {
+                console.log("Event already exists, skipping:", existingEvent.summary);
+                results.push({ 
+                    success: true, 
+                    class: `${classItem.subject} ${classItem.course} ${classItem.type}`, 
+                    eventId: eventId,
+                    skipped: true,
+                    message: "Event already exists"
+                });
+                continue;
+            }
+            
             // Find the first occurrence that matches the schedule days
             const firstOccurrence = findFirstOccurrence(dateRange.startDate, classItem.days);
             
@@ -158,8 +260,9 @@ async function addGoogleCalendar(scheduleData, token) {
             const untilDate = formatUntilDate(dateRange.endDate);
             const rrule = `RRULE:FREQ=WEEKLY;BYDAY=${byDay};UNTIL=${untilDate}`;
             
-            // Create the event object
+            // Create the event object with deterministic ID
             const event = {
+                id: eventId,
                 summary: `${classItem.subject} ${classItem.course} ${classItem.type}`,
                 location: classItem.room,
                 start: {
@@ -191,15 +294,28 @@ async function addGoogleCalendar(scheduleData, token) {
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("Failed to create event:", errorData);
-                results.push({ success: false, class: classItem.summary, error: errorData });
+                results.push({ 
+                    success: false, 
+                    class: `${classItem.subject} ${classItem.course} ${classItem.type}`, 
+                    error: errorData 
+                });
             } else {
                 const createdEvent = await response.json();
                 console.log("Event created successfully:", createdEvent);
-                results.push({ success: true, class: event.summary, eventId: createdEvent.id });
+                results.push({ 
+                    success: true, 
+                    class: event.summary, 
+                    eventId: createdEvent.id,
+                    skipped: false
+                });
             }
         } catch (error) {
             console.error("Error creating event for class:", classItem, error);
-            results.push({ success: false, class: `${classItem.subject} ${classItem.course}`, error: error.message });
+            results.push({ 
+                success: false, 
+                class: `${classItem.subject} ${classItem.course}`, 
+                error: error.message 
+            });
         }
     }
     
