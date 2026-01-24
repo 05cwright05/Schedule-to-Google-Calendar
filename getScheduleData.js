@@ -18,6 +18,10 @@ function getScheduleData(pageContent) {
     doc.querySelectorAll("table.unitime-WebTable, .unitime-WebTable").forEach(table => {
         const rows = Array.from(table.querySelectorAll("tr"));
         
+        // Track current parent course for inheritance
+        let currentSubject = "";
+        let currentCourse = "";
+        
         rows.forEach(row => {
             const cells = Array.from(row.querySelectorAll("td"));
             if (cells.length === 0) return; // Skip header rows
@@ -46,9 +50,13 @@ function getScheduleData(pageContent) {
             
             // Main course row: has Subject column filled
             if (subject) {
+                // Update current parent course for inheritance
+                currentSubject = subject;
+                currentCourse = getText(2);
+                
                 scheduleData.push({
-                    subject: subject,
-                    course: getText(2),
+                    subject: currentSubject,
+                    course: currentCourse,
                     type: type,
                     crn: getText(4),
                     availability: getText(5),
@@ -63,11 +71,11 @@ function getScheduleData(pageContent) {
                     gradeMode: getText(15)
                 });
             } 
-            // Sub-section row: no subject (Lab, Pso, etc.)
+            // Sub-section row: no subject (Lab, Pso, etc.) - inherit from parent
             else {
                 scheduleData.push({
-                    subject: "", // Will be inherited from parent course
-                    course: "",
+                    subject: currentSubject,
+                    course: currentCourse,
                     type: type,
                     crn: getText(4),
                     availability: getText(5),
