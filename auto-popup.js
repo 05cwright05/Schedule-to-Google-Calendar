@@ -11,7 +11,7 @@
     
     // Create the logo image
     const logo = document.createElement('img');
-    logo.src = chrome.runtime.getURL('logo-removebg-preview.png');
+    logo.src = chrome.runtime.getURL('icons/icon500.png');
     logo.alt = 'Purdue Calendar Extension';
     
     // Style the floating button
