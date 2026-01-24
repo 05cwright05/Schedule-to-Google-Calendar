@@ -55,6 +55,7 @@ function populateEditPage() {
                 <div class="event-field">
                     <label>Days</label>
                     <input type="text" data-field="days" value="${escapeHtml(event.days || '')}">
+                    <span class="error-message" style="display: none;">Only use M, W, F, T, R, S, U without repeats</span>
                 </div>
                 <div class="event-field">
                     <label>Time</label>
@@ -74,6 +75,10 @@ function populateEditPage() {
         if (input.dataset.field === 'time') {
             input.addEventListener('input', validateTimeInput);
         }
+        // Add real-time validation for days inputs
+        if (input.dataset.field === 'days') {
+            input.addEventListener('input', validateDaysInput);
+        }
     });
 
     // Add event listeners for delete buttons
@@ -86,6 +91,49 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function validateDaysInput(e) {
+    const input = e.target;
+    const value = input.value.trim().toUpperCase();
+    const errorMessage = input.parentElement.querySelector('.error-message');
+    
+    // Valid day letters
+    const validDays = ['M', 'W', 'F', 'T', 'R', 'S', 'U'];
+    
+    // Check if empty (valid)
+    if (value === '') {
+        input.style.border = '';
+        input.style.outline = '';
+        if (errorMessage) {
+            errorMessage.style.display = 'none';
+        }
+        return;
+    }
+    
+    // Check for invalid characters
+    const chars = value.split('');
+    const hasInvalidChars = chars.some(char => !validDays.includes(char));
+    
+    // Check for duplicates
+    const hasDuplicates = chars.length !== new Set(chars).size;
+    
+    if (hasInvalidChars || hasDuplicates) {
+        // Invalid format
+        input.style.border = '2px solid #dc3545';
+        input.style.outline = 'none';
+        if (errorMessage) {
+            errorMessage.style.display = 'block';
+        }
+    } else {
+        // Valid format - update input to uppercase
+        input.value = value;
+        input.style.border = '';
+        input.style.outline = '';
+        if (errorMessage) {
+            errorMessage.style.display = 'none';
+        }
+    }
 }
 
 function validateTimeInput(e) {
