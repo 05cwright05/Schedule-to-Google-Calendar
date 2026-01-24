@@ -8,7 +8,11 @@
       "scripting",
       "activeTab",
       "identity",
-      "downloads"
+      "downloads",
+      "storage"
+    ],
+    "host_permissions": [
+      "https://timetable.mypurdue.purdue.edu/*"
     ],
     "oauth2": {
       "client_id": "601689470409-27g1eot90c7pljkimmio63hss5okg9lo.apps.googleusercontent.com",
@@ -27,6 +31,12 @@
         "matches": ["https://timetable.mypurdue.purdue.edu/Timetabling*"],
         "js": ["auto-popup.js"],
         "run_at": "document_idle"
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": ["logo-removebg-preview.png"],
+        "matches": ["https://timetable.mypurdue.purdue.edu/*"]
       }
     ]
   }

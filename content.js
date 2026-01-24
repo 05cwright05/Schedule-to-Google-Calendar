@@ -2,30 +2,45 @@
 let scheduleData = null;
 
 document.getElementById('read-content').addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const tab = tabs[0];
+    // Check if we have a stored source tab ID (from floating button click)
+    chrome.storage.local.get(['sourceTabId'], (result) => {
+        const executeOnTab = (tabId) => {
+            chrome.scripting.executeScript({
+                target: { tabId: tabId },
+                func: () => {
+                    // Grab all HTML and send it back
+                    return document.documentElement.outerHTML;
+                },
+            }).then((results) => {
+                // Clear the stored source tab ID after use
+                chrome.storage.local.remove('sourceTabId');
+                
+                // Access the page's HTML in this script
+                const pageContent = results[0].result;
+                console.log('Page content:', pageContent);
 
-        chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-                // Grab all HTML and send it back
-                return document.documentElement.outerHTML;
-            },
-        }).then((results) => {
-            // Access the page's HTML in this script
-            const pageContent = results[0].result;
-            console.log('Page content:', pageContent);
+                // Pass the entire page content to getScheduleData for parsing
+                scheduleData = getScheduleData(pageContent);
+                
+                // Now you have the parsed schedule data to work with
+                console.log('Parsed schedule:', scheduleData);
 
-            // Pass the entire page content to getScheduleData for parsing
-            scheduleData = getScheduleData(pageContent);
-            
-            // Now you have the parsed schedule data to work with
-            console.log('Parsed schedule:', scheduleData);
-
-            // Populate edit page and show it
-            populateEditPage();
-            showEditPage();
-        });
+                // Populate edit page and show it
+                populateEditPage();
+                showEditPage();
+            });
+        };
+        
+        if (result.sourceTabId) {
+            // Use the stored source tab ID (opened from floating button)
+            executeOnTab(result.sourceTabId);
+        } else {
+            // Fall back to querying for active tab (opened from extension icon)
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                const tab = tabs[0];
+                executeOnTab(tab.id);
+            });
+        }
     });
 });
 
