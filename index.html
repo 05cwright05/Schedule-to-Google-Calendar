@@ -33,6 +33,133 @@
         transform: translateX(-100%);
       }
 
+      /* Edit page styles */
+      .page-edit {
+        transform: translateX(100%);
+        display: flex;
+        flex-direction: column;
+        background: #fafafa;
+      }
+
+      .page-edit.slide-in {
+        transform: translateX(0);
+      }
+
+      .page-edit.slide-out {
+        transform: translateX(-100%);
+      }
+
+      .edit-header {
+        padding: 20px 24px 16px;
+        background: #fff;
+        border-bottom: 1px solid #eee;
+      }
+
+      .edit-header h2 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #111;
+      }
+
+      .edit-header p {
+        font-size: 13px;
+        color: #666;
+        margin-top: 4px;
+      }
+
+      .events-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+
+      .event-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        transition: box-shadow 0.2s ease;
+      }
+
+      .event-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      }
+
+      .event-card:last-child {
+        margin-bottom: 0;
+      }
+
+      .event-field {
+        margin-bottom: 12px;
+      }
+
+      .event-field:last-child {
+        margin-bottom: 0;
+      }
+
+      .event-field label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #888;
+        margin-bottom: 4px;
+      }
+
+      .event-field input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        color: #111;
+        background: #fafafa;
+        transition: border-color 0.2s, background 0.2s;
+      }
+
+      .event-field input:focus {
+        outline: none;
+        border-color: #000;
+        background: #fff;
+      }
+
+      .event-row {
+        display: flex;
+        gap: 12px;
+      }
+
+      .event-row .event-field {
+        flex: 1;
+      }
+
+      .edit-footer {
+        padding: 16px 24px 20px;
+        background: #fff;
+        border-top: 1px solid #eee;
+      }
+
+      #continue-btn {
+        width: 100%;
+        padding: 14px;
+        background: #000;
+        color: #fff;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      #continue-btn:hover {
+        background: #333;
+      }
+
+      #continue-btn:active {
+        transform: scale(0.98);
+      }
+
+      /* Actions page styles */
       .page-actions {
         transform: translateX(100%);
         display: flex;
@@ -99,6 +226,47 @@
       .action-btn:active {
         transform: translateY(0);
       }
+
+      .back-link {
+        display: inline-block;
+        margin-bottom: 16px;
+        font-size: 13px;
+        color: #666;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+
+      .back-link:hover {
+        color: #000;
+      }
+
+      /* Delete button for events */
+      .event-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .event-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #111;
+      }
+
+      .delete-event {
+        background: none;
+        border: none;
+        padding: 4px 8px;
+        font-size: 12px;
+        color: #999;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+
+      .delete-event:hover {
+        color: #e53935;
+      }
     </style>
   </head>
   <body>
@@ -108,8 +276,22 @@
       </div>
     </div>
 
+    <div class="page page-edit" id="page-edit">
+      <div class="edit-header">
+        <h2>Review Your Schedule</h2>
+        <p>Edit event details before adding to calendar</p>
+      </div>
+      <div class="events-list" id="events-list">
+        <!-- Events will be dynamically inserted here -->
+      </div>
+      <div class="edit-footer">
+        <button id="continue-btn">Continue</button>
+      </div>
+    </div>
+
     <div class="page page-actions" id="page-actions">
       <div class="actions-container">
+        <span class="back-link" id="back-to-edit">&larr; Back to edit</span>
         <button class="action-btn" id="add-google">Add to Google Calendar</button>
         <!-- <button class="action-btn" id="add-microsoft">Add to Microsoft Calendar</button>
         <button class="action-btn" id="add-apple">Add to Apple Calendar</button> -->

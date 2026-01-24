@@ -22,31 +22,135 @@ document.getElementById('read-content').addEventListener('click', () => {
             // Now you have the parsed schedule data to work with
             console.log('Parsed schedule:', scheduleData);
 
-            // Trigger slide animation
-            showActionsPage();
+            // Populate edit page and show it
+            populateEditPage();
+            showEditPage();
         });
     });
 });
 
-function showActionsPage() {
+function populateEditPage() {
+    const eventsList = document.getElementById('events-list');
+    eventsList.innerHTML = '';
+
+    scheduleData.forEach((event, index) => {
+        const card = document.createElement('div');
+        card.className = 'event-card';
+        card.dataset.index = index;
+
+        card.innerHTML = `
+            <div class="event-card-header">
+                <span class="event-title">${event.subject} ${event.course}</span>
+                <button class="delete-event" data-index="${index}">&times;</button>
+            </div>
+            <div class="event-field">
+                <label>Name</label>
+                <input type="text" data-field="name" value="${escapeHtml(event.name || '')}">
+            </div>
+            <div class="event-field">
+                <label>Location</label>
+                <input type="text" data-field="room" value="${escapeHtml(event.room || '')}">
+            </div>
+            <div class="event-row">
+                <div class="event-field">
+                    <label>Days</label>
+                    <input type="text" data-field="days" value="${escapeHtml(event.days || '')}">
+                </div>
+                <div class="event-field">
+                    <label>Time</label>
+                    <input type="text" data-field="time" value="${escapeHtml((event.startTime || '') + (event.endTime ? ' - ' + event.endTime : ''))}">
+                </div>
+            </div>
+        `;
+
+        eventsList.appendChild(card);
+    });
+
+    // Add event listeners for input changes
+    eventsList.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', handleInputChange);
+    });
+
+    // Add event listeners for delete buttons
+    eventsList.querySelectorAll('.delete-event').forEach(btn => {
+        btn.addEventListener('click', handleDeleteEvent);
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function handleInputChange(e) {
+    const card = e.target.closest('.event-card');
+    const index = parseInt(card.dataset.index);
+    const field = e.target.dataset.field;
+    const value = e.target.value;
+
+    if (field === 'time') {
+        // Parse time field back to startTime and endTime
+        const parts = value.split(' - ');
+        scheduleData[index].startTime = parts[0]?.trim() || '';
+        scheduleData[index].endTime = parts[1]?.trim() || '';
+    } else {
+        scheduleData[index][field] = value;
+    }
+
+    console.log('Updated schedule:', scheduleData);
+}
+
+function handleDeleteEvent(e) {
+    const index = parseInt(e.target.dataset.index);
+    scheduleData.splice(index, 1);
+    populateEditPage(); // Re-render the list
+}
+
+function showEditPage() {
     const initialPage = document.getElementById('page-initial');
-    const actionsPage = document.getElementById('page-actions');
+    const editPage = document.getElementById('page-edit');
     
     initialPage.classList.add('slide-out');
+    editPage.classList.add('slide-in');
+}
+
+function showActionsPage() {
+    const editPage = document.getElementById('page-edit');
+    const actionsPage = document.getElementById('page-actions');
+    
+    editPage.classList.add('slide-out');
     actionsPage.classList.add('slide-in');
 }
+
+function showEditFromActions() {
+    const editPage = document.getElementById('page-edit');
+    const actionsPage = document.getElementById('page-actions');
+    
+    actionsPage.classList.remove('slide-in');
+    editPage.classList.remove('slide-out');
+}
+
+// Continue button handler
+document.getElementById('continue-btn').addEventListener('click', () => {
+    showActionsPage();
+});
+
+// Back to edit handler
+document.getElementById('back-to-edit').addEventListener('click', () => {
+    showEditFromActions();
+});
 
 // Calendar action button handlers
 document.getElementById('add-google').addEventListener('click', () => {
     addGoogleCalendar(scheduleData);
-
 });
 
-document.getElementById('add-microsoft').addEventListener('click', () => {
+document.getElementById('add-microsoft')?.addEventListener('click', () => {
     addToMicrosoftCalendar(scheduleData);
 });
 
-document.getElementById('add-apple').addEventListener('click', () => {
+document.getElementById('add-apple')?.addEventListener('click', () => {
     addToAppleCalendar(scheduleData);
 });
 
