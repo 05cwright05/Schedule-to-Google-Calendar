@@ -19,6 +19,17 @@ document.getElementById('read-content').addEventListener('click', () => {
                 const pageContent = results[0].result;
                 console.log('Page content:', pageContent);
 
+                // Check if user is on the Time Grid view instead of List of Classes
+                const warningElement = document.getElementById('wrong-page-warning');
+                if (pageContent.includes('Selected tab Time Grid')) {
+                    // Show warning and don't proceed
+                    warningElement.classList.add('show');
+                    return;
+                }
+                
+                // Hide warning if it was previously shown
+                warningElement.classList.remove('show');
+
                 // Pass the entire page content to getScheduleData for parsing
                 scheduleData = getScheduleData(pageContent);
                 

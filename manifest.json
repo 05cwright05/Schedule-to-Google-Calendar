@@ -1,7 +1,6 @@
 {
     "name": "BoilerSync",
     "version": "1.0",
-    "key": "AutoCalendarKey983023487324jkafsdjka",
     "manifest_version": 3,
     "description": "Generate a schedule from your Purdue timetabling page",
     "icons": {
