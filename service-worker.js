@@ -23,12 +23,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.action === "openPopupWindow") {
-    // Store the source tab ID so the popup knows which tab to read from
-    const sourceTabId = sender.tab?.id;
-    if (sourceTabId) {
-      chrome.storage.local.set({ sourceTabId });
-    }
-
     // Avoid back-to-back attempts that can trigger "fallback window" behavior.
     const now = Date.now();
     if (popupAttemptInFlight || now - lastPopupAttemptAt < 300) {
