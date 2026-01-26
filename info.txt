@@ -1,3 +1,0 @@
-<span class="unitime-AriaStatus" role="status" aria-live="polite" aria-atomic="true">Selected tab List of Classes</span>
-vs.
-<span class="unitime-AriaStatus" role="status" aria-live="polite" aria-atomic="true">Selected tab Time Grid</span>
