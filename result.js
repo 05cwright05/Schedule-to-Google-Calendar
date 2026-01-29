@@ -1,28 +1,7 @@
-// // Source - https://stackoverflow.com/a
-// // Posted by gkalpak, modified by community. See post 'Timeline' for change history
-// // Retrieved 2026-01-20, License - CC BY-SA 3.0
-
-// // Regex-pattern to check URLs against. 
-// // It matches URLs like: http[s]://[...]stackoverflow.com[...]
-// var urlRegex = /^https?:\/\/(?:[^./?#]+\.)?stackoverflow\.com/;
-
-// // A function to use as callback
-// function doStuffWithDom(domContent) {
-//     console.log('I received the following DOM content:\n' + domContent);
-// }
-
-// // When the browser-action button is clicked...
-// chrome.browserAction.onClicked.addListener(function (tab) {
-//     // ...check the URL of the active tab against our pattern and...
-//     if (urlRegex.test(tab.url)) {
-//         // ...if it matches, send a message specifying a callback too
-//         chrome.tabs.sendMessage(tab.id, {text: 'report_back'}, doStuffWithDom);
-//     }
-// });
+// Helper functions for Google Calendar sync (copied from background.js)
 
 /**
  * Converts schedule day codes to RRULE BYDAY format
- * M=Monday, T=Tuesday, W=Wednesday, R=Thursday, F=Friday
  */
 function parseDaysToRRule(days) {
     const dayMap = {
@@ -59,7 +38,6 @@ function parseTime(timeStr) {
 
 /**
  * Parses date range like "01/12 - 05/01" to start and end Date objects
- * Assumes current year for start, handles year rollover
  */
 function parseDateRange(dateRangeStr) {
     const parts = dateRangeStr.split(' - ');
@@ -73,7 +51,7 @@ function parseDateRange(dateRangeStr) {
     let startYear = currentYear;
     let endYear = currentYear;
     
-    // Handle year rollover (e.g., starts in August, ends in May next year)
+    // Handle year rollover
     if (endMonth < startMonth) {
         endYear = currentYear + 1;
     }
@@ -85,7 +63,7 @@ function parseDateRange(dateRangeStr) {
 }
 
 /**
- * Formats date for RRULE UNTIL (e.g., "20260501T235959Z")
+ * Formats date for RRULE UNTIL
  */
 function formatUntilDate(date) {
     const year = date.getFullYear();
@@ -126,12 +104,9 @@ function findFirstOccurrence(startDate, days) {
 }
 
 /**
- * Generates a deterministic event ID from class attributes.
- * Google Calendar event IDs must be 5-1024 chars, using only base32hex (a-v, 0-9).
- * We convert the combined string to a simple hash-like encoding.
+ * Generates a deterministic event ID from class attributes
  */
 function generateEventId(classItem) {
-    // Combine key attributes into a unique string
     const uniqueStr = [
         classItem.subject,
         classItem.course,
@@ -144,18 +119,14 @@ function generateEventId(classItem) {
         classItem.room
     ].join('|').toLowerCase();
     
-    // Convert to base32hex-compatible characters (a-v, 0-9)
-    // Simple encoding: convert each char code to base32hex representation
     let encoded = '';
     for (let i = 0; i < uniqueStr.length; i++) {
         const charCode = uniqueStr.charCodeAt(i);
-        // Convert to base 32 and map to valid chars (0-9 = 0-9, 10-31 = a-v)
         const high = Math.floor(charCode / 32) % 32;
         const low = charCode % 32;
         encoded += toBase32Hex(high) + toBase32Hex(low);
     }
     
-    // Ensure minimum length of 5 and max of 1024
     if (encoded.length < 5) {
         encoded = encoded.padEnd(5, '0');
     }
@@ -167,7 +138,7 @@ function generateEventId(classItem) {
 }
 
 /**
- * Converts a number 0-31 to base32hex character (0-9, a-v)
+ * Converts a number 0-31 to base32hex character
  */
 function toBase32Hex(num) {
     if (num < 10) {
@@ -177,8 +148,7 @@ function toBase32Hex(num) {
 }
 
 /**
- * Checks if an event with the given ID already exists in the calendar.
- * Returns the event if found and not cancelled, null if not found (404) or cancelled.
+ * Checks if an event with the given ID already exists
  */
 async function checkEventExists(calendarId, eventId, token) {
     try {
@@ -193,189 +163,43 @@ async function checkEventExists(calendarId, eventId, token) {
         );
         
         if (response.status === 404) {
-            return null; // Event doesn't exist
+            return null;
         }
         
         if (response.ok) {
             const event = await response.json();
-            // Treat cancelled/deleted events as non-existent
             if (event.status === 'cancelled') {
-                console.log("Event exists but is cancelled, treating as non-existent:", eventId);
                 return null;
             }
-            return event; // Event exists and is active
+            return event;
         }
         
-        // Other error - log it but treat as "doesn't exist" to allow creation attempt
-        console.warn("Unexpected response checking event:", response.status);
         return null;
     } catch (error) {
         console.error("Error checking if event exists:", error);
         return null;
     }
 }
-/**
- * Formats date for ICS file format (YYYYMMDD)
- */
-function formatICSDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}${month}${day}`;
-}
 
 /**
- * Formats datetime for ICS file format (YYYYMMDDTHHMMSS)
+ * Main function to add events to Google Calendar
  */
-function formatICSDateTime(date, time) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(time.hours).padStart(2, '0');
-    const minutes = String(time.minutes).padStart(2, '0');
-    return `${year}${month}${day}T${hours}${minutes}00`;
-}
-
-/**
- * Escapes special characters for ICS file format
- */
-function escapeICSText(text) {
-    if (!text) return '';
-    return text
-        .replace(/\\/g, '\\\\')
-        .replace(/;/g, '\\;')
-        .replace(/,/g, '\\,')
-        .replace(/\n/g, '\\n');
-}
-
-/**
- * Creates an ICS file from schedule data and triggers download
- */
-function createICSFile(scheduleData) {
-    console.log("Creating ICS file");
-    console.log(scheduleData);
-    
-    const timeZone = "America/Indiana/Indianapolis"; // Purdue timezone
-    
-    // Start building the ICS file
-    let icsContent = 'BEGIN:VCALENDAR\r\n';
-    icsContent += 'VERSION:2.0\r\n';
-    icsContent += 'PRODID:-//Purdue Schedule//EN\r\n';
-    icsContent += 'CALSCALE:GREGORIAN\r\n';
-    icsContent += 'METHOD:PUBLISH\r\n';
-    icsContent += `X-WR-TIMEZONE:${timeZone}\r\n`;
-    
-    // Add timezone component
-    icsContent += 'BEGIN:VTIMEZONE\r\n';
-    icsContent += `TZID:${timeZone}\r\n`;
-    icsContent += 'BEGIN:STANDARD\r\n';
-    icsContent += 'DTSTART:20231105T020000\r\n';
-    icsContent += 'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU\r\n';
-    icsContent += 'TZOFFSETFROM:-0400\r\n';
-    icsContent += 'TZOFFSETTO:-0500\r\n';
-    icsContent += 'END:STANDARD\r\n';
-    icsContent += 'BEGIN:DAYLIGHT\r\n';
-    icsContent += 'DTSTART:20240310T020000\r\n';
-    icsContent += 'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU\r\n';
-    icsContent += 'TZOFFSETFROM:-0500\r\n';
-    icsContent += 'TZOFFSETTO:-0400\r\n';
-    icsContent += 'END:DAYLIGHT\r\n';
-    icsContent += 'END:VTIMEZONE\r\n';
-    
-    // Process each class
-    for (const classItem of scheduleData) {
-        try {
-            // Parse the date range
-            const dateRange = parseDateRange(classItem.dateRange);
-            if (!dateRange) {
-                console.error("Failed to parse date range:", classItem.dateRange);
-                continue;
-            }
-            
-            // Parse start and end times
-            const startTime = parseTime(classItem.startTime);
-            const endTime = parseTime(classItem.endTime);
-            if (!startTime || !endTime) {
-                console.error("Failed to parse times:", classItem.startTime, classItem.endTime);
-                continue;
-            }
-            
-            // Find the first occurrence that matches the schedule days
-            const firstOccurrence = findFirstOccurrence(dateRange.startDate, classItem.days);
-            
-            // Build the RRULE for ICS format
-            const byDay = parseDaysToRRule(classItem.days);
-            const untilDate = formatICSDate(dateRange.endDate) + 'T235959';
-            
-            // Generate unique ID for the event
-            const eventId = generateEventId(classItem);
-            
-            // Add event to ICS content
-            icsContent += 'BEGIN:VEVENT\r\n';
-            icsContent += `UID:${eventId}@purdue-schedule\r\n`;
-            icsContent += `DTSTAMP:${formatICSDateTime(new Date(), { hours: 0, minutes: 0 })}\r\n`;
-            icsContent += `DTSTART;TZID=${timeZone}:${formatICSDateTime(firstOccurrence, startTime)}\r\n`;
-            icsContent += `DTEND;TZID=${timeZone}:${formatICSDateTime(firstOccurrence, endTime)}\r\n`;
-            icsContent += `RRULE:FREQ=WEEKLY;BYDAY=${byDay};UNTIL=${untilDate}\r\n`;
-            icsContent += `SUMMARY:${escapeICSText(classItem.name)}\r\n`;
-            icsContent += `LOCATION:${escapeICSText(classItem.room)}\r\n`;
-            icsContent += `DESCRIPTION:CRN: ${escapeICSText(classItem.crn)}\r\n`;
-            icsContent += 'STATUS:CONFIRMED\r\n';
-            icsContent += 'END:VEVENT\r\n';
-            
-            console.log("Added event to ICS:", classItem.name);
-        } catch (error) {
-            console.error("Error processing class for ICS:", classItem, error);
-        }
-    }
-    
-    // Close the calendar
-    icsContent += 'END:VCALENDAR\r\n';
-    chrome.runtime.sendMessage({
-        type: "DOWNLOAD_ICS",
-        icsContent
-      });
-    
-    // // Create a blob and trigger download
-    // const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    // const url = URL.createObjectURL(blob);
-    
-    // // Create a download link and click it
-    // chrome.downloads.download({
-    //     url: url,
-    //     filename: 'purdue_schedule.ics',
-    //     saveAs: true
-    // }, (downloadId) => {
-    //     if (chrome.runtime.lastError) {
-    //         console.error("Download failed:", chrome.runtime.lastError);
-    //     } else {
-    //         console.log("ICS file download started:", downloadId);
-    //     }
-    //     // Clean up the URL after a short delay
-    //     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    // });
-    
-    // console.log("ICS file created and download triggered");
-}
-
 async function addGoogleCalendar(scheduleData, token) {
-    console.log("Adding to Google Calendar v6 (with duplicate check)");
+    console.log("Adding to Google Calendar");
     console.log("Schedule data:", scheduleData);
     
     const calendarId = "primary";
-    const timeZone = "America/Indiana/Indianapolis"; // Purdue timezone
+    const timeZone = "America/Indiana/Indianapolis";
     const results = [];
     
     for (const classItem of scheduleData) {
         try {
-            // Parse the date range
             const dateRange = parseDateRange(classItem.dateRange);
             if (!dateRange) {
                 console.error("Failed to parse date range:", classItem.dateRange);
                 continue;
             }
             
-            // Parse start and end times
             const startTime = parseTime(classItem.startTime);
             const endTime = parseTime(classItem.endTime);
             if (!startTime || !endTime) {
@@ -383,14 +207,12 @@ async function addGoogleCalendar(scheduleData, token) {
                 continue;
             }
             
-            // Generate deterministic event ID from class attributes
             const eventId = generateEventId(classItem);
             console.log("Generated event ID:", eventId);
             
-            // Check if event already exists
             const existingEvent = await checkEventExists(calendarId, eventId, token);
             if (existingEvent) {
-                console.log("Event already exists (active), skipping:", existingEvent.summary, "ID:", eventId);
+                console.log("Event already exists, skipping:", existingEvent.summary);
                 results.push({ 
                     success: true, 
                     class: classItem.name, 
@@ -401,17 +223,11 @@ async function addGoogleCalendar(scheduleData, token) {
                 continue;
             }
             
-            console.log("Event does not exist or was deleted, will create:", classItem.name, "ID:", eventId);
-            
-            // Find the first occurrence that matches the schedule days
             const firstOccurrence = findFirstOccurrence(dateRange.startDate, classItem.days);
-            
-            // Build the RRULE
             const byDay = parseDaysToRRule(classItem.days);
             const untilDate = formatUntilDate(dateRange.endDate);
             const rrule = `RRULE:FREQ=WEEKLY;BYDAY=${byDay};UNTIL=${untilDate}`;
             
-            // Create the event object with deterministic ID
             const event = {
                 id: eventId,
                 summary: classItem.name,
@@ -429,7 +245,6 @@ async function addGoogleCalendar(scheduleData, token) {
             
             console.log("Creating event:", event);
             
-            // Make the API request
             const response = await fetch(
                 `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
                 {
@@ -446,10 +261,8 @@ async function addGoogleCalendar(scheduleData, token) {
                 const errorData = await response.json();
                 console.error("Failed to create event:", errorData);
                 
-                // If we get a conflict error (event ID already exists but was cancelled),
-                // try to undelete/update it instead
-                if (response.status === 409 || (errorData.error && errorData.error.code === 409)) {
-                    console.log("Conflict detected, attempting to update existing event:", eventId);
+                if (response.status === 409) {
+                    console.log("Conflict detected, attempting to update:", eventId);
                     
                     const updateResponse = await fetch(
                         `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
@@ -511,3 +324,220 @@ async function addGoogleCalendar(scheduleData, token) {
     
     return results;
 }
+
+// SVG icons
+const icons = {
+  success: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+  warning: '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+  error: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>',
+  check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+  skip: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>',
+  x: '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+};
+
+// Check if we have pending sync data or existing results
+chrome.storage.local.get(['pendingSync', 'syncResults'], async function(data) {
+  if (data.pendingSync) {
+    // We have pending sync data - show loading and process it
+    const { scheduleData, token } = data.pendingSync;
+    
+    // Clear the pending sync data
+    chrome.storage.local.remove('pendingSync');
+    
+    try {
+      console.log("Starting sync process...");
+      
+      // Perform the sync (this will take time)
+      const results = await addGoogleCalendar(scheduleData, token);
+      console.log("Sync results:", results);
+      
+      // Display the results
+      displayResults(results);
+      
+    } catch (error) {
+      console.error("Error during sync:", error);
+      
+      // Show error
+      const errorMessage = error.message || String(error);
+      displayResults([{ 
+        success: false, 
+        class: 'Google Calendar Sync', 
+        error: errorMessage
+      }]);
+    }
+  } else if (data.syncResults) {
+    // We have existing results - display them immediately
+    const results = data.syncResults;
+    
+    if (!results || !Array.isArray(results) || results.length === 0) {
+      showError('No sync results found. Please try again.');
+      return;
+    }
+
+    displayResults(results);
+  } else {
+    // No data at all
+    showError('No sync data found. Please try again.');
+  }
+});
+
+function displayResults(results) {
+  const loadingSection = document.getElementById('loading-section');
+  const resultsSection = document.getElementById('results-section');
+  const statusIcon = document.getElementById('status-icon');
+  const statusTitle = document.getElementById('status-title');
+  const statusMessage = document.getElementById('status-message');
+  const resultsList = document.getElementById('results-list');
+  const summaryFailed = document.getElementById('summary-failed');
+
+  // Count results
+  const added = results.filter(r => r.success && !r.skipped).length;
+  const skipped = results.filter(r => r.success && r.skipped).length;
+  const failed = results.filter(r => !r.success).length;
+  const total = results.length;
+
+  // Update counts
+  document.getElementById('count-added').textContent = added;
+  document.getElementById('count-skipped').textContent = skipped;
+  document.getElementById('count-failed').textContent = failed;
+
+  // Show failed count if any failures
+  if (failed > 0) {
+    summaryFailed.style.display = 'block';
+  }
+
+  // Determine overall status
+  let statusClass, icon, title, message;
+  
+  if (failed === 0 && added > 0) {
+    statusClass = 'success';
+    icon = icons.success;
+    title = 'Sync Complete!';
+    message = `Successfully added ${added} event${added !== 1 ? 's' : ''} to your calendar`;
+  } else if (failed === 0 && added === 0 && skipped > 0) {
+    statusClass = 'success';
+    icon = icons.success;
+    title = 'Already Synced';
+    message = `All ${skipped} event${skipped !== 1 ? 's' : ''} were already in your calendar`;
+  } else if (failed > 0 && (added > 0 || skipped > 0)) {
+    statusClass = 'partial';
+    icon = icons.warning;
+    title = 'Partially Complete';
+    message = `${failed} event${failed !== 1 ? 's' : ''} failed to sync`;
+  } else {
+    statusClass = 'error';
+    icon = icons.error;
+    title = 'Sync Failed';
+    message = 'Unable to add events to your calendar';
+  }
+
+  statusIcon.className = 'status-icon ' + statusClass;
+  statusIcon.innerHTML = icon;
+  statusTitle.textContent = title;
+  statusMessage.textContent = message;
+
+  // Build results list
+  resultsList.innerHTML = '';
+  for (const result of results) {
+    const item = document.createElement('div');
+    item.className = 'result-item';
+
+    let iconClass, iconSvg, statusText;
+    if (result.success && !result.skipped) {
+      iconClass = 'added';
+      iconSvg = icons.check;
+      statusText = 'Added to calendar';
+    } else if (result.success && result.skipped) {
+      iconClass = 'skipped';
+      iconSvg = icons.skip;
+      statusText = result.message || 'Already exists';
+    } else {
+      iconClass = 'failed';
+      iconSvg = icons.x;
+      statusText = formatErrorMessage(result.error);
+    }
+
+    item.innerHTML = `
+      <div class="result-icon ${iconClass}">${iconSvg}</div>
+      <div class="result-details">
+        <div class="result-name">${escapeHtml(result.class || 'Unknown Event')}</div>
+        <div class="result-status ${iconClass === 'failed' ? 'failed' : ''}">${escapeHtml(statusText)}</div>
+      </div>
+    `;
+
+    resultsList.appendChild(item);
+  }
+
+  // Show results, hide loading
+  loadingSection.classList.add('hidden');
+  resultsSection.classList.add('visible');
+
+  // Clear stored results after displaying
+  chrome.storage.local.remove('syncResults');
+}
+
+function showError(message) {
+  const loadingSection = document.getElementById('loading-section');
+  const resultsSection = document.getElementById('results-section');
+  const statusIcon = document.getElementById('status-icon');
+  const statusTitle = document.getElementById('status-title');
+  const statusMessage = document.getElementById('status-message');
+  const summary = document.getElementById('summary');
+  const resultsList = document.getElementById('results-list');
+
+  statusIcon.className = 'status-icon error';
+  statusIcon.innerHTML = icons.error;
+  statusTitle.textContent = 'Error';
+  statusMessage.textContent = message;
+  summary.style.display = 'none';
+  resultsList.style.display = 'none';
+
+  loadingSection.classList.add('hidden');
+  resultsSection.classList.add('visible');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatErrorMessage(error) {
+  if (!error) return 'Failed to add';
+  
+  const errorText = error.message || error.error?.message || String(error);
+  
+  // Handle OAuth errors
+  if (errorText.includes('bad client id')) {
+    return 'Invalid OAuth configuration. Please check extension setup.';
+  }
+  if (errorText.includes('OAuth2')) {
+    return 'Authentication failed. Please try again.';
+  }
+  if (errorText.includes('token')) {
+    return 'Authentication token expired. Please try again.';
+  }
+  
+  // Handle API errors
+  if (errorText.includes('quota')) {
+    return 'Google Calendar API quota exceeded. Try again later.';
+  }
+  if (errorText.includes('permission')) {
+    return 'Missing calendar permissions. Re-authorize the extension.';
+  }
+  if (errorText.includes('network') || errorText.includes('fetch')) {
+    return 'Network error. Check your connection and try again.';
+  }
+  
+  // Default fallback - shorten long technical errors
+  if (errorText.length > 80) {
+    return 'An error occurred. Check browser console for details.';
+  }
+  
+  return errorText;
+}
+
+// Close button handler
+document.getElementById('close-btn').addEventListener('click', function() {
+  window.close();
+});
