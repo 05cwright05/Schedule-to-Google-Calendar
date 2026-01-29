@@ -232,11 +232,6 @@ document.getElementById('back-to-edit').addEventListener('click', () => {
     showEditFromActions();
 });
 
-// Calendar action button handlers
-document.getElementById('add-google').addEventListener('click', () => {
-    addGoogleCalendar(scheduleData);
-});
-
 document.getElementById('add-microsoft')?.addEventListener('click', () => {
     addToMicrosoftCalendar(scheduleData);
 });

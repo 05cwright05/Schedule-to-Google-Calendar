@@ -12,7 +12,8 @@
     "permissions": [
       "scripting",
       "identity",
-      "downloads"
+      "downloads",
+      "notifications"
     ],
     "host_permissions": [
       "https://timetable.mypurdue.purdue.edu/*"
