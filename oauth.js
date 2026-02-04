@@ -23,7 +23,7 @@ window.onload = function() {
         });
 
         // Open the result page in a new tab immediately
-        chrome.tabs.create({ url: chrome.runtime.getURL('result.html') });
+        window.open(chrome.runtime.getURL('result.html'));
 
         // Close the popup after a short delay to allow the tab to open
         setTimeout(() => {
@@ -46,7 +46,7 @@ window.onload = function() {
         });
 
         // Open the result page to show error
-        chrome.tabs.create({ url: chrome.runtime.getURL('result.html') });
+        window.open(chrome.runtime.getURL('result.html'));
         
         setTimeout(() => {
           window.close();

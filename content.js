@@ -1,13 +1,12 @@
 // Store schedule data globally for access by calendar functions
 let scheduleData = null;
 
-document.getElementById('read-content').addEventListener('click', () => {
+document.getElementById('read-content').addEventListener('click', async () => {
     // Get the active tab and read its content
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        const tabId = tabs[0].id;
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         
-        chrome.scripting.executeScript({
-            target: { tabId: tabId },
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },
             func: () => {
                 // Grab all HTML and send it back
                 return document.documentElement.outerHTML;
@@ -38,7 +37,6 @@ document.getElementById('read-content').addEventListener('click', () => {
             populateEditPage();
             showEditPage();
         });
-    });
 });
 
 function populateEditPage() {
