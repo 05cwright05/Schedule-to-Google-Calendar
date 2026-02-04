@@ -190,11 +190,39 @@ function handleInputChange(e) {
     console.log('Updated schedule:', scheduleData);
 }
 
+let pendingDeleteIndex = null;
+
 function handleDeleteEvent(e) {
-    const index = parseInt(e.target.dataset.index);
-    scheduleData.splice(index, 1);
-    populateEditPage(); // Re-render the list
+    pendingDeleteIndex = parseInt(e.target.dataset.index);
+    const modal = document.getElementById('delete-confirm-modal');
+    modal.classList.add('show');
 }
+
+function confirmDelete() {
+    if (pendingDeleteIndex !== null) {
+        scheduleData.splice(pendingDeleteIndex, 1);
+        pendingDeleteIndex = null;
+        populateEditPage(); // Re-render the list
+    }
+    hideDeleteModal();
+}
+
+function hideDeleteModal() {
+    const modal = document.getElementById('delete-confirm-modal');
+    modal.classList.remove('show');
+    pendingDeleteIndex = null;
+}
+
+// Delete confirmation modal handlers
+document.getElementById('confirm-delete').addEventListener('click', confirmDelete);
+document.getElementById('confirm-cancel').addEventListener('click', hideDeleteModal);
+
+// Close modal when clicking overlay
+document.getElementById('delete-confirm-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'delete-confirm-modal') {
+        hideDeleteModal();
+    }
+});
 
 function showEditPage() {
     const initialPage = document.getElementById('page-initial');
